@@ -1,0 +1,41 @@
+//Curso: Engenharia de Controle e Automação
+//Disciplina: INstrumentação Eletronica
+//Aluno: Luiz Eduardo de Souza Lima
+//Descrição: Circuito de Primeira Ordem
+
+clc
+clear
+xdel(winsid())
+
+K = 1;
+tal = 0.1;
+
+num = K;
+den = tal*%s+1;
+
+H = syslin('c', num/den);
+
+t = 0:0.001:1;
+G = csim('step',t, H);
+
+time = [];
+Y = [];
+k = 1;
+
+for t2 = 0:0.001:1
+    Y = K*(1-exp(-t2/tal));
+    yOut(k) = Y;
+    time(k) = t2;
+    k = k+1;
+end
+
+subplot(121);
+plot2d(t, G);
+title("Laplace")
+xgrid;
+
+
+subplot(122);
+plot2d(time, yOut);
+title("Tempo");
+xgrid
