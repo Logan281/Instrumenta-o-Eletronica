@@ -1,0 +1,63 @@
+//Curso: Engenharia de Controle e Automação
+//Disciplina: INstrumentação Eletronica
+//Aluno: Luiz Eduardo de Souza Lima
+//Descrição: Circuito de Segunda Ordem
+
+clc
+clear
+xdel(winsid())
+
+Wn = 2;
+
+zeta1 = 0.3;
+time1 = [];
+y1 = [];
+k1 = 1;
+
+for t = 0:0.001:5
+    y1 = 1-(exp(-zeta1*Wn*t)/sqrt(1-zeta1^2))*sin((t*Wn*sqrt(1-zeta1^2)+atan(sqrt(1-zeta1^2)/zeta1)))
+    yOut1(k1) = y1;
+    time1(k1) = t;
+    k1 = k1 + 1;
+end
+
+zeta2 = 1.5;
+time2 = [];
+y2 = [];
+k2 = 1;
+
+for t = 0:0.001:5
+    y2 = 1-(exp(-zeta2*Wn*t)/sqrt(1-zeta2^2))*sin((t*Wn*sqrt(1-zeta2^2)+atan(sqrt(1-zeta2^2)/zeta2)))
+    yOut2(k2) = y2;
+    time2(k2) = t;
+    k2 = k2 + 1;
+end
+
+
+zeta3 = 1.7;
+time3 = [];
+y3 = [];
+k3 = 1;
+
+for t = 0:0.001:5
+    y3 = 1-(exp(-zeta3*Wn*t)/sqrt(1-zeta3^2))*sin((t*Wn*sqrt(1-zeta3^2)+atan(sqrt(1-zeta3^2)/zeta3)))
+    yOut3(k3) = y3;
+    time3(k3) = t;
+    k3 = k3 + 1;
+end
+
+subplot(221);
+plot2d(time1, yOut1);
+title("Zeta igual a 0.6");
+xgrid
+
+
+subplot(222);
+plot2d(time2, yOut2);
+title("Zeta igual a 1.5");
+xgrid
+
+subplot(223.5);
+plot2d(time3, yOut3);
+title("Zeta igual a 1.7");
+xgrid
