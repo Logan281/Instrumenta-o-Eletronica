@@ -1,0 +1,38 @@
+//Curso: Engenharia de Controle e Automação
+//Disciplina: INstrumentação Eletronica
+//Aluno: Luiz Eduardo de Souza Lima
+//Descrição: Derivada de uma função
+clc
+clear
+xdel(winsid())
+
+delta = 0.001
+T = 1
+Vp = 1
+k = 1
+
+vOut = []
+tOut = []
+vant = -Vp
+
+for t = 0:delta:T
+    if t>=0 & t<=T/2 then
+        v = (4*Vp*t)/T -Vp
+    elseif t>T/2 & t<T then
+        v = (-4*Vp*t)/T + 3*Vp
+    end
+    
+    vDif = (v - vant)/delta
+    vant = v
+    
+    vOut(k) = v
+    tOut(k) = t
+    vDifOut(k) = vDif
+    k = k + 1
+end
+
+
+subplot(111);
+plot(tOut, vOut);
+plot(tOut, vDifOut, "r");
+xgrid
