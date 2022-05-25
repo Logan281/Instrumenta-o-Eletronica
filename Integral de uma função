@@ -1,0 +1,44 @@
+//Curso: Engenharia de Controle e Automação
+//Disciplina: INstrumentação Eletronica
+//Aluno: Luiz Eduardo de Souza Lima
+//Descrição: Integral de uma função
+
+clc
+clear
+xdel(winsid())
+
+
+delta = 0.001
+T = 1
+Vp = 1
+k = 1
+
+vOut = []
+tOut = []
+vant = -Vp
+vInt = []
+for t = 0:delta:T
+    if t>=0 & t<=T/2 then
+        v = Vp
+    elseif t>T/2 & t<T then
+        v = -Vp
+    end
+    
+    vInt = (v - vant)/delta
+    vant = v
+    
+    vOut(k) = v
+    tOut(k) = t
+    //vDifOut(k) = vDif
+    k = k + 1
+end
+
+
+subplot(111);
+plot(tOut, vOut, "r");
+//plot2d(tOut, vDifOut);
+title("Zeta igual a 0.6");
+xgrid
+
+
+Vpt
