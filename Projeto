@@ -55,3 +55,26 @@ void loop()
   Serial.println(inMsec);
   delay(1000);
 }
+
+
+Codigo de fabio
+
+import serial
+
+porta = 'COM5'
+baud = 9600
+arquivo = "logger.csv"
+
+file = open(arquivo, "a")
+print("Criando Arquivo CSV")
+
+ser = serial.Serial(porta, baud)
+ser.flushInput()
+print("Abrindo Serial")
+
+data = str(ser.readline().decode("utf-8"))
+print(data)
+
+file.write(data)
+
+file.close()
