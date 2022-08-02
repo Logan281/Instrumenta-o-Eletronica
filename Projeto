@@ -64,7 +64,6 @@ s.close()
 CODIGO ARDUINO
 
 
-
 //Carrega a biblioteca do sensor ultrassonico
 #include <Ultrasonic.h>
 #include <LiquidCrystal.h>
@@ -109,19 +108,15 @@ void loop ()
   long microsec = ultrasonic.timing();
   cmMsec = ultrasonic.convert(microsec, Ultrasonic::CM);
   //Exibe informacoes no serial monitor
+  //Serial.print("#");
   Serial.println(cmMsec);
-currentTime = millis();
- // Every second, calculate and print litres/hour
-if(currentTime >= (cloopTime + 1000))
-{
- cloopTime = currentTime; // Updates cloopTime
 
  // Pulse frequency (Hz) = 7.5Q, Q is flow rate in L/min.
  l_hour = (flow_frequency * 60 / 7.5);
  // (Pulse frequency x 60 min) / 7.5Q = flowrate in L/hour
 
  flow_frequency = 0; // Reset Counter
+ //Serial.print("&");
  Serial.println(l_hour, DEC); // Print litres/hour
  delay(1000);
-}
 }
