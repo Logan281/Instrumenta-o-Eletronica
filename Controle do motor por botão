@@ -1,58 +1,40 @@
-CODIGO SEM BOTÃO
 //Pedro Eduardo Oliveira de Andrade
 //Engenharia de Controle e Automação
 //Sistemas embarcados
 
 #define IN_ONE 13 
 #define IN_TWO 12 
-#define button 7
-String incomingByte ;    
+#define button 2
+
+bool estadoBotao = 0;
 
 void setup() {
 
   Serial.begin(9600);
-  pinMode(IN_ONE, OUTPUT);
-  digitalWrite(IN_ONE, LOW); 
-  pinMode(IN_TWO, OUTPUT);
-  digitalWrite(IN_TWO, LOW);
-  pinMode(button, OUTPUT);
-  
   //ambos as saídas em LOW para garantir o ponto morto
+  pinMode(IN_ONE, OUTPUT);
+  //digitalWrite(IN_ONE, LOW); 
+  pinMode(IN_TWO, OUTPUT);
+  //digitalWrite(IN_TWO, LOW);
+  pinMode(button, INPUT_PULLUP);
+  
+  attachInterrupt(digitalPinToInterrupt(button), controleMotor, RISING);
 }
+
 void loop() {
+    delay(1000);
+}
 
-  if (Serial.available() > 0) {
-
-  incomingByte = Serial.readStringUntil('\n');
-
-    if (incomingByte == "SH") {  //aciona o motor em sentido horário
+void controleMotor(){
+  estadoBotao =! estadoBotao; 
+	if (estadoBotao == 1) {    
       digitalWrite(IN_ONE, HIGH); 
-  	  digitalWrite(IN_TWO, LOW);
+      digitalWrite(IN_TWO, LOW);
       Serial.println("Motor em sentido horario");
-    }
-
-    else if (incomingByte == "SAH") { //aciona o motor em sentido anti-horário
-      digitalWrite(IN_ONE, LOW); 
-  	  digitalWrite(IN_TWO, HIGH);
-      Serial.println("Motor em sentido anti-horario");
-    }
-    
-    else if (incomingByte == "STP") { //aciona o freio do motor
+  }
+  else {
       digitalWrite(IN_ONE, HIGH); 
-  	  digitalWrite(IN_TWO, HIGH);
+      digitalWrite(IN_TWO, HIGH);
       Serial.println("O freio do motor foi acionado");
-    }
-    
-    else if (incomingByte == "PM") { //coloca o motor em ponto morto
-      digitalWrite(IN_ONE, LOW); 
-  	  digitalWrite(IN_TWO, LOW);
-      Serial.println("O motor esta em ponto morto");
-    }
-
-    else{
-     Serial.println("Comando incorreto");
-    }
   }
 }
-
-
