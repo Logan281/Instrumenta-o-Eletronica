@@ -38,3 +38,56 @@ void controleMotor(){
       Serial.println("O freio do motor foi acionado");
   }
 }
+
+
+
+
+CODIGO COM  DEBAUNCE
+
+#define IN_ONE 13 
+#define IN_TWO 12 
+//#define button 2
+
+bool estadoBotao = 0;
+
+Debounce Button(2, 1); // 4 is the pin, could be a variable too.
+
+void controleMotor();
+
+void setup() {
+
+  Serial.begin(9600);
+  //ambos as saídas em LOW para garantir o ponto morto
+  pinMode(IN_ONE, OUTPUT);
+  //digitalWrite(IN_ONE, LOW); 
+  pinMode(IN_TWO, OUTPUT);
+  //digitalWrite(IN_TWO, LOW);
+  //pinMode(button, INPUT_PULLUP);
+  //pinMode(Button, INPUT); 
+  
+  //attachInterrupt(digitalPinToInterrupt(button), controleMotor, CHANGE);  
+  Serial.print("testando...");
+}
+
+void loop() { 
+ if (Button.read())
+ {
+  Serial.print(Button.read());
+  controleMotor();
+ }  
+ delay(1000);
+}
+
+void controleMotor(){
+  estadoBotao =! estadoBotao; 
+  if (estadoBotao == 1) {    
+      digitalWrite(IN_ONE, HIGH); 
+      digitalWrite(IN_TWO, HIGH);
+      Serial.println("O freio do motor foi acionado");
+  }
+  else {
+      digitalWrite(IN_ONE, HIGH); 
+      digitalWrite(IN_TWO, LOW);
+      Serial.println("Motor em sentido horario");
+  }
+}
