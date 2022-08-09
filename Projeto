@@ -137,7 +137,7 @@ import serial
 #file = open(arquivo, "a")
 
 # inicia a conexão com a porta serial com a chamada ao método serial.Serial()
-s = serial.Serial('COM7', 9600)
+s = serial.Serial('COM5', 9600)
 
 # Usa o comando plt da biblioteca matplotlib para criar uma figura e mostra ela na tela
 plt.close('all')
@@ -152,16 +152,25 @@ vasao = np.array([])
 i = 0
 
 while True:
-    a = s.readline()  # Ler o que esta sendo recebido na porta serial
-    a.decode()
-    if a[0] == "#":
-        a = a.replace("#", "")
-        b = float(a[0:4])  # Converte os valores lidos para float
+    '''a = s.readline()  # Ler o que esta sendo recebido na porta serial
+    a.decode()'''
+
+    a = s.readline()  # read a byte string
+    string_n = a.decode('utf-8').strip()  # decode byte string into Unicode
+    string = string_n.rstrip()  # remove \n and \r
+
+    print(string)
+    if string[0] == "#":
+        string = string[1:len(a)]
+        b = float(string[0:4])  # Converte os valores lidos para float
         distancia = np.append(distancia, b)
-    if a[0] == "&":
-        a = a.replace("&", "")
-        b = float(a[0:4])  # Converte os valores lidos para float
+    if string[0] == "&":
+        string = string[1:len(a)]
+        b = float(string[0:4])  # Converte os valores lidos para float
         vasao = np.append(vasao, b)
+
+    '''print(distancia)
+    print(vasao)'''
     # Utiliza a biblioteca matplotlib para editar a figura anterioremente criada e acrescentar todos os novos dados que surgirem
     plt.cla()
     plt.title('Análise gráfica - Sensor SHARP 2Y0A21')
