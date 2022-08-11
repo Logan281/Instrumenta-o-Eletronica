@@ -1,0 +1,70 @@
+import matplotlib.pyplot as plt
+import serial
+import funcoes
+
+
+# Cria um arquivo do tipo csv
+#arquivo = "logger.csv"
+
+# Abre o arquivo criado
+#file = open(arquivo, "a")
+
+# inicia a conexão com a porta serial com a chamada ao método serial.Serial()
+s = serial.Serial('COM5', 9600)
+
+# Usa o comando plt da biblioteca matplotlib para criar uma figura e mostra ela na tela
+plt.close('all')
+plt.figure()
+plt.ion()
+plt.show()
+
+# Usa o comando np da biblioteca numpy para criar um vetor
+distancia = []
+vasao = []
+
+i = 0
+
+while True:
+    a = s.readline()  # read a byte string  # decode byte string into Unicode
+    string = funcoes.TratamentoString(a)  # remove \n and \r
+
+    #print(string)
+    if string[0] == "#":
+        distancia.append(funcoes.Tratamento(string))
+    if string[0] == "&":
+        vasao.append(funcoes.Tratamento(string))
+
+    # Utiliza a biblioteca matplotlib para editar a figura anterioremente criada e acrescentar todos os novos dados que surgirem
+    plt.cla()
+    plt.title('Análise gráfica - Sensor de vasão')
+    plt.grid(True)
+    plt.xlabel(' Vasão [L/h]')
+    plt.ylabel('Tempo [s]')
+    plt.subplot(1, 2, 1)
+    plt.title('Análise gráfica - Sensor SHARP 2Y0A21')
+    plt.grid(True)
+    plt.xlabel('  [L/h]')
+    plt.xlabel(' Distancia [cm]')
+    plt.ylabel('Tempo [s]')
+    plt.plot(distancia, color="r")
+    plt.subplot(1, 2, 2)
+    plt.plot(vasao, color="g")
+    plt.pause(0.01)
+    i += 1
+
+# Encerra a conexão com a porta Serial
+s.close()
+
+
+
+
+
+
+def Tratamento(string):
+    string = string[1:len(string)]
+    b = float(string[0:4])  # Converte os valores lidos para float
+    return b
+def TratamentoString(a):
+    string_n = a.decode('utf-8').strip()
+    string = string_n.rstrip()
+    return string
