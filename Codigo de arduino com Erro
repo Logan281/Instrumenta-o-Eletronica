@@ -1,0 +1,166 @@
+#include <Ultrasonic.h>
+#include <LiquidCrystal.h>
+#include "max6675.h"
+//Coded and Tested By:
+// Sheekar Banerjee, AI-ML-IOT Solution Engineer and Researcher
+
+/*
+Arduino Water flow meter
+YF- S201 Hall Effect Water Flow Sensor
+Water Flow Sensor output processed to read in litres/hour
+*/
+#define pino_trigger 4
+#define pino_echo 5
+
+Ultrasonic ultrasonic(pino_trigger, pino_echo);
+
+int flowPin = 2;    //Este é o pino de entrada no Arduino
+double flowRate;    //Este é o valor que pretende-se calcular
+volatile int count; //Este número precisa ser setado como volátil para garantir que ele seja atualizado corretamente durante o processo de interrupção
+
+const int led1 = 13 ;
+const int led2 = 12;// o led esta ligado ao pino 09
+const int button = 3;   // o botao esta ligado ao pino 02
+ 
+boolean lastButton = LOW;     // variavel que guarda o ultimo estado do botao (até porque comecamos com o botao sempre em LOW via resistor PULL-DOWN)
+boolean currentButton = LOW;    // variavel contendo o atual estado do botao (e ainda utilizamos aqui um resistor pull-down)
+boolean ledOn = false;      // o atual estado do led (on/off) (o led começa em OFF porque o button começa em LOW) PS: (FALSE = LOW = 0)
+
+int thermoDO = 6;
+int thermoCS = 7;
+int thermoCLK =8;
+ 
+//Cria o objeto do Termopar e seta os Pinos Digitais
+MAX6675 thermocouple(thermoCLK, thermoCS, thermoDO);
+ 
+//Seta 5 Votls os pinos Digitais
+ 
+//Numero de amostras
+int amostragem = 10;
+
+//float cmMsec = 0;
+
+float nivel = 0;
+
+void setup()
+{
+  pinMode(led1, OUTPUT);     // configura o pino do led como saida
+  pinMode(button, INPUT);   // configura o pino do botao como entrada (não é obrigatório pois por padrão os pinos são configurados como ENTRADA)
+  pinMode(led2, OUTPUT);
+
+  pinMode(flowPin, INPUT); //Seta o pino de entrada
+  attachInterrupt(0, Flow, RISING);  //Configura o interruptor 0 (pino 2 no Arduino Uno) para rodar a função "Flow"
+  Serial.begin(9600);
+
+}
+boolean debounce(boolean last)
+  {
+    boolean current = digitalRead(button);      // le o estado atual do botao
+    
+    if(last != current)
+    {
+      delay(3);     // espera 3ms --> AQUI VAI O "SEGREDO" DO "EFETIVO E SEGURO, ALÉM DE RÁPIDO DEBOUNCING"
+      current = digitalRead(button);      // le NOVAMENTE o estado do botao apos o "debounce"  
+    }
+    return current;     // retorna o valor atualizado do botao (button)
+  }
+void loop ()
+{ 
+  ControleMotor(); 
+  digitalWrite(led1, HIGH);
+
+  SensorDistancia();
+
+  nivel  = SensorDistancia();
+ // nivel = cmMsec;
+  
+  SensorVasao();
+
+  SensorTemperatura();
+  
+  
+  ControleMotorNivel(nivel);
+  
+  currentButton = debounce(lastButton); 
+  // Lê o estado do botao após o debounce
+  // aqui passamos pela FUNÇÃO "debounce"
+  // ANTES de podermos OBTER o VALOR FINAL
+ // do ATUAL ESTADO DO BOTÃO! (R.Costa.)
+
+ delay(1000);
+}
+float SensorDistancia(){
+  float cmMsec;
+  long microsec = ultrasonic.timing();
+  cmMsec = ultrasonic.convert(microsec, Ultrasonic::CM);
+  //Exibe informacoes no serial monitor
+  Serial.print("#");
+  Serial.println(cmMsec);
+  return cmMsec;
+}
+void SensorVasao(){
+  count = 0;      // Reseta o contador para iniciarmos a contagem em 0 novamente
+  interrupts();   //Habilita o interrupção no Arduino
+  delay (1000);   //Espera 1 segundo
+  noInterrupts(); //Desabilita o interrupção no Arduino
+   
+  //Cálculos matemáticos
+  flowRate = (count * 2.25);        //Conta os pulsos no último segundo e multiplica por 2,25mL, que é a vazão de cada pulso
+  flowRate = flowRate * 60;         //Converte segundos em minutos, tornando a unidade de medida mL/min
+  flowRate = flowRate / 1000;       //Converte mL em litros, tornando a unidade de medida L/min
+
+  Serial.print("&");
+  Serial.println(flowRate); 
+}
+void SensorTemperatura(){
+   //Variavel que recebera os dados de leitura
+   float temperatura = 0;
+   
+   //Inicia a leituira das amostra
+   for(int index =0; index < amostragem; index++){
+     temperatura = thermocouple.readCelsius() + temperatura;
+     delay(200);
+   }
+   
+   //Tira a media das leituras
+   temperatura = temperatura / amostragem;
+   
+   //Imprime na Serial
+   Serial.print("$ "); 
+   Serial.println(temperatura);
+}
+void ControleMotor(){
+   currentButton = debounce(lastButton); 
+  // Lê o estado do botao após o debounce
+  // aqui passamos pela FUNÇÃO "debounce"
+  // ANTES de podermos OBTER o VALOR FINAL
+ // do ATUAL ESTADO DO BOTÃO! (R.Costa.)
+ 
+   if(lastButton == LOW && currentButton == HIGH)      // se o botao foi PRESSIONADO
+    {
+      
+      ledOn = !ledOn;     // alternamos o valor do LED
+    }
+    
+    lastButton = currentButton;     // redefinimos o valor do botao
+ 
+    digitalWrite(led2, ledOn);     // alternamos o estado do led
+}
+void ControleMotorNivel(float nivel){
+  float  NivelReferencia  = 15;
+  float erro = 0;
+  erro = nivel - NivelReferencia;
+  if(erro > 0){
+    digitalWrite(led1, HIGH);
+    digitalWrite(led2, LOW); 
+  }else if(erro < 0){
+    digitalWrite(led1, HIGH);
+    digitalWrite(led2, HIGH); 
+  }
+  Serial.print("%");
+  Serial.println(erro);
+}
+void Flow()
+{
+   count++; //Quando essa função é chamada, soma-se 1 a variável "count" 
+}
