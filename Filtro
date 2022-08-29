@@ -1,0 +1,48 @@
+#include <Ultrasonic.h>
+
+#define pino_trigger 4
+#define pino_echo 5
+
+float y = 0;
+
+Ultrasonic ultrasonic(pino_trigger, pino_echo);
+void setup() {
+  Serial.begin(9600);
+
+}
+
+void loop() {
+  float tstart = millis();
+  int tempo = 0;
+  float cmMsec;
+  float cmFiltro = 0;
+  long microsec = ultrasonic.timing();
+  cmMsec = ultrasonic.convert(microsec, Ultrasonic::CM);
+  //Exibe informacoes no serial monitor
+  //Serial.print("#");
+  Serial.print(cmMsec);
+  Serial.print(",");
+  delay(1);
+  //tempo = tempo + 1;
+  //cmFiltro = Filtro(cmMsec,15);
+
+  float f = 2.5;
+  float omega = 2*3.14*f;
+  float delta = 0.01;
+ 
+  y = delta*omega*(cmMsec-y)+y;
+  
+  Serial.println(y);
+  float tout = millis();
+  //Serial.println("delta");
+  //Serial.println(tout - tstart);
+}
+
+/*
+float Filtro(float x, int delta){
+  float f = 10;
+  float omega = 2*3.14*f;
+ 
+  y = delta*omega*(x-y)+y;
+  return y;  
+}*/
