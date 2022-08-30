@@ -282,3 +282,14 @@ while True:
 
 # Encerra a conexão com a porta Serial
 s.close()
+
+
+def Tratamento(string):
+    string = string[1:len(string)]
+    b = float(string[0:4])  # Converte os valores lidos para float
+    return b
+def TratamentoString(a):
+    string_n = a.decode('utf-8').strip()
+    string = string_n.rstrip()
+    return string
+
