@@ -198,3 +198,87 @@ void Flow()
 {
    count++; //Quando essa função é chamada, soma-se 1 a variável "count" 
 }
+
+
+
+
+
+
+
+CODIGO DO PYTHON
+
+
+import matplotlib.pyplot as plt
+import serial
+import funcoes
+
+
+# Cria um arquivo do tipo csv
+#arquivo = "logger.csv"
+
+# Abre o arquivo criado
+#file = open(arquivo, "a")
+
+# inicia a conexão com a porta serial com a chamada ao método serial.Serial()
+s = serial.Serial('COM5', 9600)
+
+# Usa o comando plt da biblioteca matplotlib para criar uma figura e mostra ela na tela
+plt.close('all')
+plt.figure()
+plt.ion()
+plt.show()
+
+# Usa o comando np da biblioteca numpy para criar um vetor
+distancia = []
+vasao = []
+Temperatura = []
+distanciaFiltrada = []
+
+i = 0
+
+while True:
+    a = s.readline()  # read a byte string  # decode byte string into Unicode
+    string = funcoes.TratamentoString(a)  # remove \n and \r
+
+    #print(string)
+    if string[0] == "#":
+        distancia.append(funcoes.Tratamento(string))
+    if string[0] == "@":
+        distanciaFiltrada.append(funcoes.Tratamento(string))
+    if string[0] == "&":
+        vasao.append(funcoes.Tratamento(string))
+    if string[0] == "$":
+        Temperatura.append((funcoes.Tratamento(string)))
+
+    # Utiliza a biblioteca matplotlib para editar a figura anterioremente criada e acrescentar todos os novos dados que surgirem
+    plt.cla()
+    plt.subplot(2, 2, 1)
+    plt.title('Análise gráfica - Sensor de nivel')
+    plt.grid(True)
+    plt.xlabel('Tempo [s] ')
+    plt.ylabel(' Nivel [cm] e Nivel Filtrado ')
+    plt.plot(distancia, color="k")
+
+    plt.subplot(2, 2, 1)
+    plt.grid(True)
+    plt.plot(distanciaFiltrada, color="g")
+
+    plt.subplot(2, 2, 2)
+    plt.title('Análise gráfica - Sensor de vasão')
+    plt.grid(True)
+    plt.xlabel(' Tempo [s]')
+    plt.ylabel(' Vasão [L/min]')
+    plt.plot(vasao, color="b")
+
+    plt.subplot(2, 2, 3)
+    plt.title('Análise gráfica - Sensor de temperatura')
+    plt.grid(True)
+    plt.xlabel(' Tempo [s]')
+    plt.ylabel(' Temperatura [C°]')
+    plt.plot(Temperatura, color="r")
+
+    plt.pause(0.01)
+    i += 1
+
+# Encerra a conexão com a porta Serial
+s.close()
