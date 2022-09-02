@@ -1,0 +1,326 @@
+CODIGO NO IDE ARDUINO
+
+#include <Ultrasonic.h>
+#include <LiquidCrystal.h>
+#include "max6675.h"
+//Coded and Tested By:
+// Sheekar Banerjee, AI-ML-IOT Solution Engineer and Researcher
+
+/*
+Arduino Water flow meter
+YF- S201 Hall Effect Water Flow Sensor
+Water Flow Sensor output processed to read in litres/hour
+*/
+#define pino_trigger 4
+#define pino_echo 5
+
+LiquidCrystal lcd_1(22, 24, 26, 28, 30, 32);
+
+Ultrasonic ultrasonic(pino_trigger, pino_echo);
+
+int flowPin = 2;    //Este é o pino de entrada no Arduino
+double flowRate;    //Este é o valor que pretende-se calcular
+volatile int count; //Este número precisa ser setado como volátil para garantir que ele seja atualizado corretamente durante o processo de interrupção
+
+const int led1 = 13 ;
+const int led2 = 12;// o led esta ligado ao pino 09
+const int button = 3;   // o botao esta ligado ao pino 02
+ 
+boolean lastButton = LOW;     // variavel que guarda o ultimo estado do botao (até porque comecamos com o botao sempre em LOW via resistor PULL-DOWN)
+boolean currentButton = LOW;    // variavel contendo o atual estado do botao (e ainda utilizamos aqui um resistor pull-down)
+boolean ledOn = false;      // o atual estado do led (on/off) (o led começa em OFF porque o button começa em LOW) PS: (FALSE = LOW = 0)
+
+int thermoDO = 6;
+int thermoCS = 7;
+int thermoCLK =8;
+ 
+//Cria o objeto do Termopar e seta os Pinos Digitais
+MAX6675 thermocouple(thermoCLK, thermoCS, thermoDO);
+ 
+//Seta 5 Votls os pinos Digitais
+ 
+//Numero de amostras
+int amostragem = 10;
+
+//float cmMsec = 0;
+
+float nivel = 0;
+
+float y = 0;
+
+float erro = 0;
+int flagBomba = 0;
+
+void setup()
+{
+  lcd_1.begin(16, 2);
+  pinMode(led1, OUTPUT);     // configura o pino do led como saida
+  pinMode(button, INPUT);   // configura o pino do botao como entrada (não é obrigatório pois por padrão os pinos são configurados como ENTRADA)
+  pinMode(led2, OUTPUT);
+
+  pinMode(flowPin, INPUT); //Seta o pino de entrada
+  attachInterrupt(0, Flow, RISING);  //Configura o interruptor 0 (pino 2 no Arduino Uno) para rodar a função "Flow"
+  Serial.begin(9600);
+
+}
+boolean debounce(boolean last)
+  {
+    boolean current = digitalRead(button);      // le o estado atual do botao
+    
+    if(last != current)
+    {
+      delay(3);     // espera 3ms --> AQUI VAI O "SEGREDO" DO "EFETIVO E SEGURO, ALÉM DE RÁPIDO DEBOUNCING"
+      current = digitalRead(button);      // le NOVAMENTE o estado do botao apos o "debounce"  
+    }
+    return current;     // retorna o valor atualizado do botao (button)
+  }
+void loop ()
+{ 
+  
+  lcd_1.print("ghj");
+  lcd_1.setCursor(0,2);
+  delay(1000);
+  
+  float  Referencia = 13;
+  float f = 2.5;
+  float omega = 2*3.14*f;
+  float delta = 0.01;
+  //ControleMotor(); 
+  
+  digitalWrite(led1, HIGH);
+
+  //SensorDistancia();
+
+  nivel  = SensorDistancia();
+ // nivel = cmMsec;
+  y = delta*omega*(nivel-y)+y;
+
+  Serial.print("#");
+  Serial.println(y);
+  SensorVasao();
+
+  SensorTemperatura();
+  
+  
+  //ControleMotorNivel(nivel);
+  float  NivelReferencia  = 15;
+  
+  erro = NivelReferencia - nivel;
+  
+  if(erro < 2){
+    digitalWrite(led1, HIGH);
+    digitalWrite(led2, LOW); 
+    flagBomba = 1;
+  }else if(erro > -2){
+    digitalWrite(led1, HIGH);
+    digitalWrite(led2, HIGH); 
+    flagBomba = 0;
+  }
+
+  Serial.print("*");
+  Serial.println(erro);
+  Serial.print("!");
+  Serial.println(flagBomba);
+  Serial.print("@");
+  Serial.println(NivelReferencia);
+  
+  currentButton = debounce(lastButton); 
+  // Lê o estado do botao após o debounce
+  // aqui passamos pela FUNÇÃO "debounce"
+  // ANTES de podermos OBTER o VALOR FINAL
+ // do ATUAL ESTADO DO BOTÃO! (R.Costa.)
+ 
+
+ delay(1000);
+}
+float SensorDistancia(){
+  float cmMsec;
+  long microsec = ultrasonic.timing();
+  cmMsec = ultrasonic.convert(microsec, Ultrasonic::CM);
+  //Exibe informacoes no serial monitor
+  //Serial.print("#");
+  //Serial.print(cmMsec);
+  //Serial.print(",");
+  return cmMsec;
+}
+void SensorVasao(){
+  count = 0;      // Reseta o contador para iniciarmos a contagem em 0 novamente
+  interrupts();   //Habilita o interrupção no Arduino
+  delay (1000);   //Espera 1 segundo
+  noInterrupts(); //Desabilita o interrupção no Arduino
+   
+  //Cálculos matemáticos
+  flowRate = (count * 2.25);        //Conta os pulsos no último segundo e multiplica por 2,25mL, que é a vazão de cada pulso
+  flowRate = flowRate * 60;         //Converte segundos em minutos, tornando a unidade de medida mL/min
+  flowRate = flowRate / 1000;       //Converte mL em litros, tornando a unidade de medida L/min
+
+  Serial.print("&");
+  Serial.println(flowRate); 
+ // lcd_1.setCursor(0,2);
+ // lcd_1.print(flowRate);
+}
+void SensorTemperatura(){
+   //Variavel que recebera os dados de leitura
+   float temperatura = 0;
+   
+   //Inicia a leituira das amostra
+   for(int index =0; index < amostragem; index++){
+     temperatura = thermocouple.readCelsius() + temperatura;
+     delay(200);
+   }
+   
+   //Tira a media das leituras
+   temperatura = temperatura / amostragem;
+   
+   //Imprime na Serial
+   Serial.print("$ "); 
+   Serial.println(temperatura);
+   //lcd_1.setCursor(0,1);
+  //lcd_1.print(temperatura);
+}
+void ControleMotor(){
+   currentButton = debounce(lastButton); 
+  // Lê o estado do botao após o debounce
+  // aqui passamos pela FUNÇÃO "debounce"
+  // ANTES de podermos OBTER o VALOR FINAL
+ // do ATUAL ESTADO DO BOTÃO! (R.Costa.)
+ 
+   if(lastButton == LOW && currentButton == HIGH)      // se o botao foi PRESSIONADO
+    {
+      
+      ledOn = !ledOn;     // alternamos o valor do LED
+    }
+    
+    lastButton = currentButton;     // redefinimos o valor do botao
+ 
+    digitalWrite(led2, ledOn);     // alternamos o estado do led
+}
+void ControleMotorNivel(float nivel){
+  float  NivelReferencia  = 15;
+  
+  erro = nivel - NivelReferencia;
+  if(erro > 0){
+    digitalWrite(led1, HIGH);
+    digitalWrite(led2, LOW); 
+  }else if(erro < 0){
+    digitalWrite(led1, HIGH);
+    digitalWrite(led2, HIGH); 
+  }
+  //Serial.print("%");
+  //Serial.println(erro);
+}
+void Flow()
+{
+   count++; //Quando essa função é chamada, soma-se 1 a variável "count" 
+}
+
+
+CODIGO PYTHON
+
+import matplotlib.pyplot as plt
+import serial
+import funcoes
+
+
+# Cria um arquivo do tipo csv
+#arquivo = "logger.csv"
+
+# Abre o arquivo criado
+#file = open(arquivo, "a")
+
+# inicia a conexão com a porta serial com a chamada ao método serial.Serial()
+s = serial.Serial('COM7', 9600)
+
+# Usa o comando plt da biblioteca matplotlib para criar uma figura e mostra ela na tela
+plt.close('all')
+plt.figure()
+plt.ion()
+plt.show()
+
+# Usa o comando np da biblioteca numpy para criar um vetor
+nivel = []
+vasao = []
+Temperatura = []
+erro = []
+nivelReferncia = []
+flagBomba = []
+i = 0
+localTexto = 0;
+while True:
+    a = s.readline()  # read a byte string  # decode byte string into Unicode
+    string = funcoes.TratamentoString(a)  # remove \n and \r
+
+    #print(string)
+    if string[0] == "@":
+        nivelReferncia.append((funcoes.Tratamento(string)))
+    if string[0] == "#":
+        nivel.append(funcoes.Tratamento(string))
+    if string[0] == "*":
+        erro.append(funcoes.Tratamento(string))
+    if string[0] == "!":
+        flagBomba.append((funcoes.Tratamento(string)))
+    if string[0] == "&":
+        vasao.append(funcoes.Tratamento(string))
+    if string[0] == "$":
+        Temperatura.append((funcoes.Tratamento(string)))
+    localTexto = localTexto + 1
+
+    # Utiliza a biblioteca matplotlib para editar a figura anterioremente criada e acrescentar todos os novos dados que surgirem
+    plt.cla()
+    plt.subplot(2, 2, 1)
+    plt.title('Análise gráfica - Sensor de nivel')
+    plt.grid(True)
+    plt.xlabel('Tempo [s] ')
+    plt.ylabel(' Nivel [cm] e Nivel Filtrado ')
+    plt.text(0, 14, "Nivel da bomba - [Preto]")
+    plt.plot(nivel, color="k")
+
+    plt.subplot(2, 2, 1)
+    plt.grid(True)
+    plt.text(0, 13, "Nivel de referencia - [Verde]")
+    plt.plot(nivelReferncia, color="g")
+
+    plt.subplot(2, 2, 2)
+    plt.title('Análise gráfica - Sensor de vasão')
+    plt.grid(True)
+    plt.xlabel(' Tempo [s]')
+    plt.ylabel(' Vasão [L/min]')
+    plt.plot(vasao, color="b")
+
+    plt.subplot(2, 2, 3)
+    plt.title('Análise gráfica - Sensor de temperatura')
+    plt.grid(True)
+    plt.xlabel(' Tempo [s]')
+    plt.ylabel(' Temperatura [C°]')
+    plt.plot(Temperatura, color="r")
+
+    plt.subplot(2, 2, 4)
+    plt.title('Análise gráfica - Erro')
+    plt.grid(True)
+    plt.xlabel(' Tempo [s]')
+    plt.ylabel(' Erro [cm]')
+    plt.text(0, 1.3, "Erro  - [Amarelo]")
+    plt.plot(erro, color="y")
+
+    plt.subplot(2, 2, 4)
+    plt.grid(True)
+    plt.text(0, 1.2, "Sinal do motor - [Magenta]")
+    plt.plot(flagBomba, color="m")
+
+    plt.pause(0.01)
+    i += 1
+
+# Encerra a conexão com a porta Serial
+s.close()
+
+
+
+
+def Tratamento(string):
+    string = string[1:len(string)]
+    b = float(string[0:4])  # Converte os valores lidos para float
+    return b
+def TratamentoString(a):
+    string_n = a.decode('utf-8').strip()
+    string = string_n.rstrip()
+    return string
